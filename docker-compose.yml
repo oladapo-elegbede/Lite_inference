@@ -1,0 +1,38 @@
+﻿services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lite_inference_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: lite_inference_db
+      POSTGRES_USER: proxy_user
+      POSTGRES_PASSWORD: proxy_secure_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proxy_user -d lite_inference_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  lite_inference:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lite_inference_gateway
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://proxy_user:proxy_secure_password@postgres:5432/lite_inference_db
+      - OPENAI_API_KEY=
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
