@@ -1,5 +1,6 @@
 ﻿from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.session import init_db
 from app.api.v1.chat import router as v1_chat_router
@@ -20,6 +21,18 @@ app = FastAPI(
     description="Cost-Optimized AI Semantic Routing Proxy",
     version=settings.VERSION,
     lifespan=lifespan,
+)
+
+# Enable CORS for local Next.js frontend development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(v1_chat_router, prefix="/v1", tags=["Chat"])

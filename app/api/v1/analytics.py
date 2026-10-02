@@ -1,5 +1,5 @@
-﻿from fastapi import APIRouter, Depends
-from sqlalchemy import select, func
+﻿from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.db.models import RequestLog
@@ -9,9 +9,6 @@ router = APIRouter()
 
 @router.get("/analytics/summary")
 async def get_analytics_summary(db: AsyncSession = Depends(get_db)):
-    """
-    Returns aggregate financial and performance analytics across all logged proxy requests.
-    """
     result = await db.execute(
         select(
             func.count(RequestLog.id).label("total_requests"),
@@ -40,4 +37,41 @@ async def get_analytics_summary(db: AsyncSession = Depends(get_db)):
         "performance_metrics": {
             "average_latency_ms": round(float(row.avg_latency_ms), 2),
         },
+    }
+
+
+@router.get("/analytics/requests")
+async def get_recent_requests(
+    limit: int = Query(default=10, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Returns the most recent request logs for live audit trail visualization.
+    """
+    stmt = select(RequestLog).order_by(desc(RequestLog.timestamp)).limit(limit)
+    result = await db.execute(stmt)
+    logs = result.scalars().all()
+
+    return {
+        "object": "list",
+        "data": [
+            {
+                "id": log.id,
+                "request_id": log.request_id,
+                "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+                "original_model": log.original_model,
+                "routed_model": log.routed_model,
+                "provider": log.provider,
+                "routing_reason": log.routing_reason,
+                "prompt_tokens": log.prompt_tokens,
+                "completion_tokens": log.completion_tokens,
+                "total_tokens": log.total_tokens,
+                "estimated_original_cost_usd": log.estimated_original_cost_usd,
+                "estimated_routed_cost_usd": log.estimated_routed_cost_usd,
+                "money_saved_usd": log.money_saved_usd,
+                "latency_ms": log.latency_ms,
+                "status_code": log.status_code,
+            }
+            for log in logs
+        ],
     }
