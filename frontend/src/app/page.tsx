@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import KPICard from "@/components/KPICard";
 import ModelCatalog from "@/components/ModelCatalog";
 import RequestHistory from "@/components/RequestHistory";
+import Playground from "@/components/Playground";
 import { AnalyticsSummary } from "@/types/api";
 import {
   Activity,
@@ -25,8 +26,6 @@ export default function Home() {
   const fetchAnalytics = useCallback(async (isManualRefresh = false) => {
     if (isManualRefresh) {
       setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
     }
     setError(null);
 
@@ -48,6 +47,10 @@ export default function Home() {
 
   useEffect(() => {
     fetchAnalytics();
+    const interval = setInterval(() => {
+      fetchAnalytics(false);
+    }, 3000);
+    return () => clearInterval(interval);
   }, [fetchAnalytics]);
 
   return (
@@ -116,6 +119,9 @@ export default function Home() {
             />
           </div>
         )}
+
+        {/* Live Interactive Proxy Playground */}
+        <Playground onSuccess={() => fetchAnalytics(false)} />
 
         {/* Live Proxy Audit Trail */}
         <RequestHistory />

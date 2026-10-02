@@ -1,4 +1,8 @@
+"use client";
+
 import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Cpu,
@@ -10,19 +14,21 @@ import {
 
 interface NavItem {
   name: string;
+  href: string;
   icon: React.ElementType;
-  active?: boolean;
 }
 
 const navItems: NavItem[] = [
-  { name: "Overview", icon: LayoutDashboard, active: true },
-  { name: "Model Catalog", icon: Cpu },
-  { name: "Semantic Router", icon: GitFork },
-  { name: "Analytics & Costs", icon: BarChart3 },
-  { name: "Request Logs", icon: ListFilter },
+  { name: "Overview", href: "/", icon: LayoutDashboard },
+  { name: "Model Catalog", href: "/model-catalog", icon: Cpu },
+  { name: "Semantic Router", href: "/semantic-router", icon: GitFork },
+  { name: "Analytics & Costs", href: "/analytics", icon: BarChart3 },
+  { name: "Request Logs", href: "/logs", icon: ListFilter },
 ];
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <aside className="w-64 border-r border-slate-800 bg-slate-950 flex flex-col justify-between h-screen sticky top-0 p-4">
       <div className="space-y-6">
@@ -48,18 +54,24 @@ export default function Sidebar() {
         <nav className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
+
             return (
-              <button
+              <Link
                 key={item.name}
+                href={item.href}
                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                  item.active
+                  isActive
                     ? "bg-slate-900 text-emerald-400 border border-slate-800"
                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
                 }`}
               >
                 <Icon className="h-4 w-4" />
                 <span>{item.name}</span>
-              </button>
+              </Link>
             );
           })}
         </nav>
